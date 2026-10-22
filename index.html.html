@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZoodMall / ZoodPay - Zamonaviy Xarid va Muddatli To'lov Platformasi</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Three.js for 3D Graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            cyan: '#00f2fe',
+                            purple: '#7928ca',
+                            pink: '#ff0080',
+                            orange: '#ff6b00',
+                            dark: '#080b14',
+                            card: '#111827'
+                        }
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #05070f;
+            color: #ffffff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism card styles */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(0, 242, 254, 0.5);
+            box-shadow: 0 20px 40px rgba(0, 242, 254, 0.2);
+        }
+
+        /* 3D Dynamic Buttons */
+        .btn-3d {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .btn-3d-cyan {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: #000;
+            box-shadow: 0 6px 0 #0088cc, 0 12px 20px rgba(0, 242, 254, 0.4);
+        }
+        .btn-3d-cyan:hover {
+            transform: translateY(-3px) rotateX(10deg);
+            box-shadow: 0 9px 0 #0088cc, 0 15px 25px rgba(0, 242, 254, 0.6);
+        }
+        .btn-3d-cyan:active {
+            transform: translateY(3px) rotateX(0deg);
+            box-shadow: 0 3px 0 #0088cc, 0 5px 10px rgba(0, 242, 254, 0.4);
+        }
+
+        .btn-3d-pink {
+            background: linear-gradient(135deg, #ff0080 0%, #7928ca 100%);
+            color: #fff;
+            box-shadow: 0 6px 0 #52188a, 0 12px 20px rgba(255, 0, 128, 0.4);
+        }
+        .btn-3d-pink:hover {
+            transform: translateY(-3px) rotateX(10deg);
+            box-shadow: 0 9px 0 #52188a, 0 15px 25px rgba(255, 0, 128, 0.6);
+        }
+        .btn-3d-pink:active {
+            transform: translateY(3px) rotateX(0deg);
+            box-shadow: 0 3px 0 #52188a, 0 5px 10px rgba(255, 0, 128, 0.4);
+        }
+
+        .btn-3d-amber {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            color: #1a1a1a;
+            box-shadow: 0 6px 0 #d47a32, 0 12px 20px rgba(253, 160, 133, 0.4);
+        }
+        .btn-3d-amber:hover {
+            transform: translateY(-3px) rotateX(10deg);
+            box-shadow: 0 9px 0 #d47a32, 0 15px 25px rgba(253, 160, 133, 0.6);
+        }
+        .btn-3d-amber:active {
+            transform: translateY(3px) rotateX(0deg);
+            box-shadow: 0 3px 0 #d47a32, 0 5px 10px rgba(253, 160, 133, 0.4);
+        }
+
+        /* Canvas background */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Glowing text effects */
+        .glow-text-cyan {
+            text-shadow: 0 0 15px rgba(0, 242, 254, 0.7);
+        }
+        .glow-text-pink {
+            text-shadow: 0 0 15px rgba(255, 0, 128, 0.7);
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-100">
+
+    <!-- Canvas for 3D Interactive Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-gray-800/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-400 via-pink-500 to-purple-600 flex items-center justify-center text-black font-extrabold text-xl font-orbitron shadow-lg shadow-cyan-500/30">
+                    Z
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-orbitron text-xl sm:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500">
+                        ZoodMall
+                    </span>
+                    <span class="text-[10px] tracking-widest font-bold text-cyan-400 -mt-1 font-orbitron">
+                        POWERED BY ZOODPAY
+                    </span>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex space-x-8 font-medium">
+                <a href="#hero" class="hover:text-cyan-400 transition-colors">Bosh sahifa</a>
+                <a href="#action-buttons" class="hover:text-cyan-400 transition-colors">Xizmatlar</a>
+                <a href="#products" class="hover:text-cyan-400 transition-colors">Mahsulotlar</a>
+                <a href="#about" class="hover:text-cyan-400 transition-colors">Biz haqimizda</a>
+            </nav>
+
+            <!-- Quick Action 3D Link -->
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSd-0BvIoxrRNQchyHxb844aNBsGlMNCgQUzDqVO39GunoUR_w/viewform?usp=dialog" 
+               target="_blank" 
+               class="btn-3d btn-3d-cyan text-sm px-5 py-2.5">
+                <i class="fa-solid font-bold fa-bolt mr-2"></i> ZoodPay Muddatli To'lov
+            </a>
+        </div>
+    </header>
+
+    <!-- Hero Section with 3D Canvas & Direct Actions -->
+    <section id="hero" class="relative min-h-[90vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            
+            <div class="space-y-8 text-center lg:text-left">
+                <div class="inline-flex items-center space-x-2 px-4 py-2 rounded-full glass-card border border-cyan-500/30 text-cyan-400 text-sm font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                    <span>ZoodMall & ZoodPay Rasmiy Xizmati</span>
+                </div>
+
+                <h1 class="text-4xl sm:text-6xl font-orbitron font-extrabold tracking-tight leading-none">
+                    ZOODMALL <br>
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 glow-text-cyan">
+                        ELEKTRONIKA
+                    </span> <br>
+                    & ZOODPAY
+                </h1>
+
+                <p class="text-gray-300 text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                    Xarid qiling, ZoodPay orqali 0% foiz bilan bo'lib to'lang! Eng so'nggi gadjetlar va elektronika uskunalarini qulay shartlarda xarid qilish uchun quyidagi tugmalardan foydalaning.
+                </p>
+
+                <!-- Featured Links Section / Main Requested 3D Buttons -->
+                <div id="action-buttons" class="pt-4 flex flex-col sm:flex-row flex-wrap gap-5 justify-center lg:justify-start">
+                    
+                    <!-- 1. Korxona Rezyumesi Button -->
+                    <a href="https://docs.google.com/document/d/1LU4_g7H-frLT_3AYiv1_0DHnjc_H35OjTT8EzxYna_k/edit?usp=sharing" 
+                       target="_blank" 
+                       class="btn-3d btn-3d-cyan px-6 py-4 text-sm sm:text-base">
+                        <i class="fa-solid fa-file-contract text-lg mr-3"></i>
+                        Korxona Rezyumesi
+                    </a>
+
+                    <!-- 2. Buyurma berish Button -->
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSd-0BvIoxrRNQchyHxb844aNBsGlMNCgQUzDqVO39GunoUR_w/viewform?usp=dialog" 
+                       target="_blank" 
+                       class="btn-3d btn-3d-pink px-6 py-4 text-sm sm:text-base">
+                        <i class="fa-solid fa-cart-shopping text-lg mr-3"></i>
+                        Buyurtma Berish
+                    </a>
+
+                    <!-- 3. Buyurma jadvali Button -->
+                    <a href="https://docs.google.com/spreadsheets/d/1DR-ByEOCVE6d-0SkCCvfJBXzRl0vnApf8PWyRcX7uD0/edit?usp=sharing" 
+                       target="_blank" 
+                       class="btn-3d btn-3d-amber px-6 py-4 text-sm sm:text-base">
+                        <i class="fa-solid fa-table-cells text-lg mr-3"></i>
+                        Buyurtmalar Jadvali
+                    </a>
+
+                </div>
+            </div>
+
+            <!-- 3D Display Canvas Container -->
+            <div class="relative w-full h-[350px] sm:h-[450px] rounded-3xl glass-panel p-4 flex items-center justify-center border border-cyan-500/20 shadow-2xl overflow-hidden group">
+                <div class="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 via-transparent to-pink-500/10 pointer-events-none"></div>
+                <!-- Interactive 3D Model Display -->
+                <div id="model-3d-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+                <div class="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-orbitron text-cyan-400 border border-cyan-500/30">
+                    <i class="fa-solid fa-arrows-spin mr-1"></i> ZoodPay 3D Core - Modelni aylantiring
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Products Showcase Grid -->
+    <section id="products" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="text-center mb-16">
+            <h2 class="font-orbitron text-3xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 mb-4">
+                ZOODMALL TOP MAHSULOTLAR
+            </h2>
+            <p class="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto">
+                ZoodPay orqali bo'lib to'lash imkoniyati mavjud bo'lgan eng ommabop elektron jihozlar.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Card 1 -->
+            <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                    <div class="h-48 rounded-xl bg-gradient-to-br from-purple-900/40 to-cyan-900/40 flex items-center justify-center mb-6 relative overflow-hidden group">
+                        <i class="fa-solid fa-microchip text-7xl text-cyan-400 group-hover:scale-110 transition-transform duration-300"></i>
+                        <span class="absolute top-3 right-3 bg-cyan-500 text-black text-xs font-bold font-orbitron px-2.5 py-1 rounded-full">ZoodPay 0%</span>
+                    </div>
+                    <h3 class="font-orbitron font-bold text-xl mb-2 text-cyan-300">AI Protsessor Moduli</h3>
+                    <p class="text-gray-400 text-sm mb-4">Yuqori tezlikdagi neyron tarmoqlar va 3D hisoblash platformalari uchun chip.</p>
+                </div>
+                <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-800">
+                    <div class="flex flex-col">
+                        <span class="font-orbitron text-lg font-bold text-pink-400">$299.00</span>
+                        <span class="text-xs text-gray-400">$74.75 x 4 oy (ZoodPay)</span>
+                    </div>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSd-0BvIoxrRNQchyHxb844aNBsGlMNCgQUzDqVO39GunoUR_w/viewform?usp=dialog" 
+                       target="_blank" 
+                       class="btn-3d btn-3d-cyan text-xs px-4 py-2">
+                       Buyurtma
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                    <div class="h-48 rounded-xl bg-gradient-to-br from-pink-900/40 to-purple-900/40 flex items-center justify-center mb-6 relative overflow-hidden group">
+                        <i class="fa-solid fa-vr-cardboard text-7xl text-pink-400 group-hover:scale-110 transition-transform duration-300"></i>
+                        <span class="absolute top-3 right-3 bg-pink-500 text-white text-xs font-bold font-orbitron px-2.5 py-1 rounded-full">Top Sales</span>
+                    </div>
+                    <h3 class="font-orbitron font-bold text-xl mb-2 text-pink-300">VR Hologram Ko'zoynak</h3>
+                    <p class="text-gray-400 text-sm mb-4">3D virtual va kengaytirilgan borliq uchun eng so'nggi avlod smart shlemi.</p>
+                </div>
+                <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-800">
+                    <div class="flex flex-col">
+                        <span class="font-orbitron text-lg font-bold text-pink-400">$499.00</span>
+                        <span class="text-xs text-gray-400">$124.75 x 4 oy (ZoodPay)</span>
+                    </div>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSd-0BvIoxrRNQchyHxb844aNBsGlMNCgQUzDqVO39GunoUR_w/viewform?usp=dialog" 
+                       target="_blank" 
+                       class="btn-3d btn-3d-pink text-xs px-4 py-2">
+                       Buyurtma
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="glass-card rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                    <div class="h-48 rounded-xl bg-gradient-to-br from-amber-900/40 to-pink-900/40 flex items-center justify-center mb-6 relative overflow-hidden group">
+                        <i class="fa-solid fa-robot text-7xl text-amber-400 group-hover:scale-110 transition-transform duration-300"></i>
+                        <span class="absolute top-3 right-3 bg-amber-500 text-black text-xs font-bold font-orbitron px-2.5 py-1 rounded-full">ZoodPay 0%</span>
+                    </div>
+                    <h3 class="font-orbitron font-bold text-xl mb-2 text-amber-300">Aqlli Robot Controller</h3>
+                    <p class="text-gray-400 text-sm mb-4">Sanoat va uy robototexnikasi uchun masofaviy aqlli boshqaruv tizimi.</p>
+                </div>
+                <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-800">
+                    <div class="flex flex-col">
+                        <span class="font-orbitron text-lg font-bold text-pink-400">$180.00</span>
+                        <span class="text-xs text-gray-400">$45.00 x 4 oy (ZoodPay)</span>
+                    </div>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSd-0BvIoxrRNQchyHxb844aNBsGlMNCgQUzDqVO39GunoUR_w/viewform?usp=dialog" 
+                       target="_blank" 
+                       class="btn-3d btn-3d-amber text-xs px-4 py-2">
+                       Buyurtma
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Quick Access Hub Section -->
+    <section id="about" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="glass-panel rounded-3xl p-8 sm:p-12 relative overflow-hidden border border-cyan-500/30">
+            <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-20 -top-20 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="relative z-10 text-center max-w-3xl mx-auto space-y-6">
+                <h2 class="font-orbitron text-3xl sm:text-4xl font-extrabold text-white">
+                    ZOODPAY INTEGRATSIYASI & HUJJATLAR
+                </h2>
+                <p class="text-gray-300">
+                    Bizning tizimimiz orqali arizalarni topshirish, rezyume bilan tanishish hamda buyurtmalar holatini jonli monitoring qilish imkoniyati yaratilgan.
+                </p>
+
+                <div class="pt-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <a href="https://docs.google.com/document/d/1LU4_g7H-frLT_3AYiv1_0DHnjc_H35OjTT8EzxYna_k/edit?usp=sharing" 
+                       target="_blank"
+                       class="glass-card p-5 rounded-xl hover:border-cyan-400 text-center flex flex-col items-center">
+                        <i class="fa-solid fa-file-word text-3xl text-cyan-400 mb-3"></i>
+                        <span class="font-orbitron text-sm font-bold">Korxona Rezyumesi</span>
+                    </a>
+
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSd-0BvIoxrRNQchyHxb844aNBsGlMNCgQUzDqVO39GunoUR_w/viewform?usp=dialog" 
+                       target="_blank"
+                       class="glass-card p-5 rounded-xl hover:border-pink-400 text-center flex flex-col items-center">
+                        <i class="fa-solid fa-pen-to-square text-3xl text-pink-400 mb-3"></i>
+                        <span class="font-orbitron text-sm font-bold">Buyurtma Berish</span>
+                    </a>
+
+                    <a href="https://docs.google.com/spreadsheets/d/1DR-ByEOCVE6d-0SkCCvfJBXzRl0vnApf8PWyRcX7uD0/edit?usp=sharing" 
+                       target="_blank"
+                       class="glass-card p-5 rounded-xl hover:border-amber-400 text-center flex flex-col items-center">
+                        <i class="fa-solid fa-table text-3xl text-amber-400 mb-3"></i>
+                        <span class="font-orbitron text-sm font-bold">Buyurtmalar Jadvali</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800/80 glass-panel py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>© 2026 ZoodMall & ZoodPay Elektronika Platformasi. Barcha huquqlar himoyalangan.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.onload = function () {
+            // --- 1. BACKGROUND THREE.JS PARTICLES CANVAS ---
+            const bgCanvas = document.getElementById('bg-canvas');
+            const bgScene = new THREE.Scene();
+            const bgCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const bgRenderer = new THREE.WebGLRenderer({ canvas: bgCanvas, alpha: true, antialias: true });
+            
+            bgRenderer.setSize(window.innerWidth, window.innerHeight);
+            bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Create Star Particles
+            const particlesGeometry = new THREE.BufferGeometry();
+            const particlesCount = 700;
+            const posArray = new Float32Array(particlesCount * 3);
+
+            for (let i = 0; i < particlesCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 15;
+            }
+
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            
+            const particlesMaterial = new THREE.PointsMaterial({
+                size: 0.02,
+                color: 0x00f2fe,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+            bgScene.add(particlesMesh);
+
+            bgCamera.position.z = 3;
+
+            // --- 2. HERO 3D MODEL DISPLAY (ZoodPay Cyber Core) ---
+            const container = document.getElementById('model-3d-container');
+            const heroScene = new THREE.Scene();
+            const heroCamera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            const heroRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+
+            heroRenderer.setSize(container.clientWidth, container.clientHeight);
+            heroRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(heroRenderer.domElement);
+
+            // Create Futuristic Hologram Tech Object
+            const outerGroup = new THREE.Group();
+
+            // Outer Torus Knot
+            const knotGeo = new THREE.TorusKnotGeometry(1, 0.28, 100, 16);
+            const knotMat = new THREE.MeshPhongMaterial({
+                color: 0x00f2fe,
+                wireframe: true,
+                emissive: 0x0044aa,
+                shininess: 100
+            });
+            const knotMesh = new THREE.Mesh(knotGeo, knotMat);
+            outerGroup.add(knotMesh);
+
+            // Inner Glowing Core
+            const coreGeo = new THREE.IcosahedronGeometry(0.6, 2);
+            const coreMat = new THREE.MeshStandardMaterial({
+                color: 0xff0080,
+                roughness: 0.2,
+                metalness: 0.8,
+                wireframe: false
+            });
+            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+            outerGroup.add(coreMesh);
+
+            heroScene.add(outerGroup);
+
+            // Lighting for 3D Model
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            heroScene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x00f2fe, 2, 10);
+            pointLight.position.set(2, 3, 4);
+            heroScene.add(pointLight);
+
+            const pointLight2 = new THREE.PointLight(0xff0080, 2, 10);
+            pointLight2.position.set(-2, -3, -2);
+            heroScene.add(pointLight2);
+
+            heroCamera.position.z = 4.2;
+
+            // Interaction Variables for Orbit-like effect
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+            });
+
+            container.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaMove = {
+                        x: e.clientX - previousMousePosition.x,
+                        y: e.clientY - previousMousePosition.y
+                    };
+
+                    outerGroup.rotation.y += deltaMove.x * 0.01;
+                    outerGroup.rotation.x += deltaMove.y * 0.01;
+                }
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            // Touch events support for mobile devices
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            });
+
+            container.addEventListener('touchmove', (e) => {
+                if (isDragging && e.touches.length === 1) {
+                    const deltaMove = {
+                        x: e.touches[0].clientX - previousMousePosition.x,
+                        y: e.touches[0].clientY - previousMousePosition.y
+                    };
+
+                    outerGroup.rotation.y += deltaMove.x * 0.01;
+                    outerGroup.rotation.x += deltaMove.y * 0.01;
+
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            });
+
+            window.addEventListener('touchend', () => { isDragging = false; });
+
+            // --- ANIMATION LOOP ---
+            function animate() {
+                requestAnimationFrame(animate);
+
+                // Rotate background particles
+                particlesMesh.rotation.y += 0.0008;
+                particlesMesh.rotation.x += 0.0003;
+
+                // Auto rotate hero 3D model if user is not dragging
+                if (!isDragging) {
+                    outerGroup.rotation.y += 0.008;
+                    outerGroup.rotation.x += 0.004;
+                }
+
+                bgRenderer.render(bgScene, bgCamera);
+                heroRenderer.render(heroScene, heroCamera);
+            }
+
+            animate();
+
+            // Handle Window Resize
+            window.addEventListener('resize', () => {
+                // Resize Background Canvas
+                bgCamera.aspect = window.innerWidth / window.innerHeight;
+                bgCamera.updateProjectionMatrix();
+                bgRenderer.setSize(window.innerWidth, window.innerHeight);
+
+                // Resize Hero Canvas
+                if (container) {
+                    heroCamera.aspect = container.clientWidth / container.clientHeight;
+                    heroCamera.updateProjectionMatrix();
+                    heroRenderer.setSize(container.clientWidth, container.clientHeight);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
